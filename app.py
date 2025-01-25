@@ -1,20 +1,42 @@
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
-from streamlit_calendar import calendar
 import pandas as pd
 import random
+from plotly.colors import qualitative
+
+import calendar_utils
+
+def get_color_mapping(unique_what, color_palette):
+    """
+    Assigns colors from the color_palette to each unique 'what'.
+    If there are more 'what' items than colors, the palette repeats.
+    """
+    color_dict = {}
+    palette_length = len(color_palette)
+    for idx, item in enumerate(sorted(unique_what)):
+        color_dict[item] = color_palette[idx % palette_length]
+    return color_dict
 
 
 st.set_page_config(layout="wide")
 
 st.title("Training 2025")
 
-conn = st.connection("gsheets", type=GSheetsConnection)
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    with st.spinner('Loading data from Google Sheets...'):
+        df = conn.read()
+except Exception as e:
+    st.error(f"Error connecting to Google Sheets: {e}")
+    st.stop()
 
 df = conn.read()
 df['what'] = df['what'].str.strip()
 
 unique_what = df['what'].unique()
+
+color_palette = qualitative.Dark24  # List of 24 colors
+color_dict = get_color_mapping(unique_what, color_palette)
 
 st.sidebar.title("Sport Type")
 selected_what = []
@@ -22,35 +44,11 @@ for item in unique_what:
     if st.sidebar.checkbox(item, value=True):
         selected_what.append(item)
 
-def random_color():
-    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
-color_dict = {item: random_color() for item in unique_what}
+df['color'] = df['what'].map(color_dict)
 
 filtered_df = df[df['what'].isin(selected_what)]
 
-calendar_options = {
-    "editable": False,
-    "selectable": False,
-    "headerToolbar": {
-        "left": "today prev,next",
-        "center": "title",
-        "right": ""
-    },
-    "slotMinTime": "09:00:00",
-    "slotMaxTime": "22:00:00",
-    "initialView": "dayGridMonth",
-}
-calendar_events = [
-    {
-        "title": row['what'],
-        "start": pd.to_datetime(row['date'], dayfirst=True).date().isoformat(),
-        "end": pd.to_datetime(row['date'], dayfirst=True).date().isoformat(),
-        "color": color_dict.get(row['what'], "gray")
-    }
-    for _, row in filtered_df.iterrows()
-]
-callbacks = []
-
-calendar = calendar(events=calendar_events, options=calendar_options, callbacks=callbacks)
-st.write(calendar)
+calendar_df = filtered_df.drop_duplicates(subset=['date', 'what'])
+calendar_options = calendar_utils.get_options()
+calendar_events = calendar_utils.generate_events(calendar_df, color_dict)
+calendar_utils.display(calendar_events, calendar_options)
