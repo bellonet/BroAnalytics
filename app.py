@@ -38,15 +38,36 @@ unique_activity = df['activity'].unique()
 
 color_palette = qualitative.Dark24  # List of 24 colors
 color_dict = get_color_mapping(unique_activity, color_palette)
+df['color'] = df['activity'].map(color_dict)
 
 st.sidebar.title("Sport Type")
 selected_activity = []
-for item in unique_activity:
-    if st.sidebar.checkbox(item, value=True):
-        selected_activity.append(item)
 
-df['color'] = df['activity'].map(color_dict)
+btn_col1, btn_col2 = st.sidebar.columns([1, 1])
 
+# "Select All" Button
+if btn_col1.button('Select All'):
+    for activity in unique_activity:
+        st.session_state[f'checkbox_{activity}'] = True
+    st.rerun()
+
+# "Select None" Button
+if btn_col2.button('Select None'):
+    for activity in unique_activity:
+        st.session_state[f'checkbox_{activity}'] = False
+    st.rerun()
+
+# Display checkboxes for each activity
+for activity in unique_activity:
+    # Initialize the checkbox state if not already in session_state
+    if f'checkbox_{activity}' not in st.session_state:
+        st.session_state[f'checkbox_{activity}'] = True  # Default to selected
+
+    # Render the checkbox with the current state
+    if st.sidebar.checkbox(activity, value=st.session_state[f'checkbox_{activity}'], key=f'checkbox_{activity}'):
+        selected_activity.append(activity)
+
+# Filter the DataFrame based on selected activities
 filtered_df = df[df['activity'].isin(selected_activity)]
 
 calendar_df = filtered_df.drop_duplicates(subset=['date', 'activity'])
