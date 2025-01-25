@@ -6,14 +6,14 @@ from plotly.colors import qualitative
 
 import calendar_utils
 
-def get_color_mapping(unique_what, color_palette):
+def get_color_mapping(unique_activity, color_palette):
     """
-    Assigns colors from the color_palette to each unique 'what'.
-    If there are more 'what' items than colors, the palette repeats.
+    Assigns colors from the color_palette to each unique 'activity'.
+    If there are more 'activity' items than colors, the palette repeats.
     """
     color_dict = {}
     palette_length = len(color_palette)
-    for idx, item in enumerate(sorted(unique_what)):
+    for idx, item in enumerate(sorted(unique_activity)):
         color_dict[item] = color_palette[idx % palette_length]
     return color_dict
 
@@ -30,25 +30,24 @@ except Exception as e:
     st.error(f"Error connecting to Google Sheets: {e}")
     st.stop()
 
-df = conn.read()
-df['what'] = df['what'].str.strip()
+df['activity'] = df['activity'].str.strip()
 
-unique_what = df['what'].unique()
+unique_activity = df['activity'].unique()
 
 color_palette = qualitative.Dark24  # List of 24 colors
-color_dict = get_color_mapping(unique_what, color_palette)
+color_dict = get_color_mapping(unique_activity, color_palette)
 
 st.sidebar.title("Sport Type")
-selected_what = []
-for item in unique_what:
+selected_activity = []
+for item in unique_activity:
     if st.sidebar.checkbox(item, value=True):
-        selected_what.append(item)
+        selected_activity.append(item)
 
-df['color'] = df['what'].map(color_dict)
+df['color'] = df['activity'].map(color_dict)
 
-filtered_df = df[df['what'].isin(selected_what)]
+filtered_df = df[df['activity'].isin(selected_activity)]
 
-calendar_df = filtered_df.drop_duplicates(subset=['date', 'what'])
+calendar_df = filtered_df.drop_duplicates(subset=['date', 'activity'])
 calendar_options = calendar_utils.get_options()
 calendar_events = calendar_utils.generate_events(calendar_df, color_dict)
 calendar_utils.display(calendar_events, calendar_options)

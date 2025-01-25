@@ -6,16 +6,16 @@ from streamlit_calendar import calendar
 def generate_events(filtered_df, color_dict):
     """
     Generate a list of calendar events from the filtered DataFrame.
-    Each 'what' is shown only once per day.
+    Each 'activity' is shown only once per day.
     """
     events = []
     for _, row in filtered_df.iterrows():
         event_date = pd.to_datetime(row['date'], dayfirst=True).date().isoformat()
         event = {
-            "title": row['what'],
+            "title": row['activity'],
             "start": event_date,
             "end": event_date,
-            "color": color_dict.get(row['what'], "gray")
+            "color": color_dict.get(row['activity'], "gray")
         }
         events.append(event)
     return events
