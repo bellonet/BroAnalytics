@@ -5,6 +5,8 @@ import random
 from plotly.colors import qualitative
 
 import calendar_utils
+import plot_utils
+
 
 def get_color_mapping(unique_activity, color_palette):
     """
@@ -51,3 +53,19 @@ calendar_df = filtered_df.drop_duplicates(subset=['date', 'activity'])
 calendar_options = calendar_utils.get_options()
 calendar_events = calendar_utils.generate_events(calendar_df, color_dict)
 calendar_utils.display(calendar_events, calendar_options)
+
+# Add some spacing
+st.markdown("---")
+
+
+st.header("Activity Counts")
+activity_fig = plot_utils.plot_activity_counts(calendar_df, color_dict)
+st.plotly_chart(activity_fig, use_container_width=True)
+
+st.header("Monthly Activity Counts")
+monthly_activity_fig = plot_utils.plot_monthly_activity_counts(calendar_df, color_dict)
+st.plotly_chart(monthly_activity_fig, use_container_width=True)
+
+st.header("Monthly Active Days Counts")
+days_trained_fig = plot_utils.plot_days_trained_per_month(calendar_df)
+st.plotly_chart(days_trained_fig, use_container_width=True)
