@@ -40,7 +40,47 @@ color_palette = qualitative.Dark24  # List of 24 colors
 color_dict = get_color_mapping(unique_activity, color_palette)
 df['color'] = df['activity'].map(color_dict)
 
-st.sidebar.title("Sport Type")
+
+st.sidebar.title("Filters")
+
+df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce')
+
+# Get the minimum and maximum dates from the DataFrame
+min_date = df['date'].min().date()
+max_date = df['date'].max().date()
+
+# Add a header for the date filter section
+st.sidebar.header("Date Range")
+
+
+if st.sidebar.button('Reset Dates'):
+    st.session_state['date_range'] = [min_date, max_date]
+    st.rerun()
+
+
+selected_dates = st.sidebar.date_input(
+    "🗓️ Select Date Range:",
+    [min_date, max_date],
+    min_value=min_date,
+    max_value=max_date,
+    key='date_range'
+)
+
+print(selected_dates)
+
+# Validate that two dates are selected
+if isinstance(selected_dates, (list, tuple)) and len(selected_dates) == 2:
+    start_date, end_date = selected_dates
+    # Convert selected dates to pandas Timestamp for comparison
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+else:
+    # Fallback to full range if not properly selected
+    start_date, end_date = pd.Timestamp(min_date), pd.Timestamp(max_date)
+
+# (Optional) Display the selected date range for user confirmation
+st.sidebar.write(f"**Selected Date Range:** {start_date.date()} to {end_date.date()}")
+
 selected_activity = []
 
 btn_col1, btn_col2 = st.sidebar.columns([1, 1])
@@ -67,8 +107,11 @@ for activity in unique_activity:
     if st.sidebar.checkbox(activity, value=st.session_state[f'checkbox_{activity}'], key=f'checkbox_{activity}'):
         selected_activity.append(activity)
 
-# Filter the DataFrame based on selected activities
-filtered_df = df[df['activity'].isin(selected_activity)]
+filtered_df = df[
+    (df['activity'].isin(selected_activity)) &
+    (df['date'] >= start_date) &
+    (df['date'] <= end_date)
+]
 
 calendar_df = filtered_df.drop_duplicates(subset=['date', 'activity'])
 calendar_options = calendar_utils.get_options()
