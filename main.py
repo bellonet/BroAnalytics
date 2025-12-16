@@ -11,6 +11,7 @@ from plots import (
     plot_overview_timeline,
     plot_activity_distribution,
     plot_monthly_volume,
+    plot_monthly_reps_volume,
     plot_specific_metrics
 )
 
@@ -113,6 +114,8 @@ content = html.Div(
                     html.H2(id="kpi-duration", className="text-success")
                 ])
             ]), width=True),
+
+
         ], className="mb-4"),
 
         # Second Row: Session Distribution (Full Width)
@@ -132,6 +135,10 @@ content = html.Div(
         # Fourth Row: Monthly Volume (Full Width)
         dbc.Row([
             dbc.Col(dcc.Graph(id='monthly-bar-plot'), width=12),
+        ], className="mt-4"),
+
+        dbc.Row([
+            dbc.Col(dcc.Graph(id='monthly-reps-plot'), width=12),
         ], className="mt-4"),
 
         html.Hr(),
@@ -166,6 +173,7 @@ app.layout = html.Div([sidebar, content])
      Output('timeline-plot', 'figure'),
      Output('pie-plot', 'figure'),
      Output('monthly-bar-plot', 'figure'),
+     Output('monthly-reps-plot', 'figure'),
      Output('specific-plot', 'figure'),
      Output('sport-filter', 'options'),
      Output('single-sport-selector', 'options'),
@@ -189,7 +197,7 @@ def update_dashboard(selected_sports, start_date, end_date, deep_dive_sport, n_c
 
     # Return empty states with correct tuple size (14 items)
     if df_raw.empty:
-        return 0, 0, "0 t", "0 km", "0h 0m", {}, {}, {}, {}, [], [], None, None, None, None
+        return "0/0", 0, "0 t", "0 km", "0h 0m", {}, {}, {}, {}, {}, [], [], None, None, None, None
 
     min_date = df_raw['date_obj'].min()
     max_date = df_raw['date_obj'].max()
@@ -203,8 +211,11 @@ def update_dashboard(selected_sports, start_date, end_date, deep_dive_sport, n_c
     if selected_sports:
         dff = dff[dff['activity'].isin(selected_sports)]
 
-    # --- KPIs ---
-    total_days = dff['date_obj'].dt.date.nunique()
+    start_dt = pd.to_datetime(current_start)
+    end_dt = pd.to_datetime(current_end)
+    total_days_range = (end_dt - start_dt).days + 1 if pd.notna(start_dt) and pd.notna(end_dt) else 0
+    active_days = dff['date_obj'].dt.normalize().nunique()
+    days_str = f"{active_days}/{total_days_range}" if total_days_range > 0 else "0/0"
 
     ## New: Total Reps Calculation
     def calc_reps(row):
@@ -243,21 +254,23 @@ def update_dashboard(selected_sports, start_date, end_date, deep_dive_sport, n_c
     # Assuming 'plots' exists based on the request.
     fig_timeline = plot_overview_timeline(dff, color_map)
     fig_pie = plot_activity_distribution(dff, color_map)
-    fig_monthly = plot_monthly_volume(dff, color_map)
+    fig_monthly_time = plot_monthly_volume(dff, color_map)
+    fig_monthly_reps = plot_monthly_reps_volume(dff, color_map)  # NEW
 
     dff_deep = df_raw.loc[mask]
     if deep_dive_sport:
         dff_specific = dff_deep[dff_deep['activity'] == deep_dive_sport]
-        fig_specific = plot_specific_metrics(dff_specific, deep_dive_sport, color_map)
+        fig_specific = plot_specific_metrics(dff_specific, deep_dive_sport, color_map)  # CHANGED
     else:
-        fig_specific = plot_specific_metrics(pd.DataFrame(), "None")
+        fig_specific = plot_specific_metrics(pd.DataFrame(), "None", color_map)
         fig_specific.update_layout(title="Select a sport below to see specific metrics")
+
 
     unique_sports = sorted(df_raw['activity'].unique())
     sport_options = [{'label': i.title(), 'value': i} for i in unique_sports]
 
-    return (total_days, total_reps, weight_str, kms_str, duration_str,
-            fig_timeline, fig_pie, fig_monthly, fig_specific,
+    return (days_str, total_reps, weight_str, kms_str, duration_str,
+            fig_timeline, fig_pie, fig_monthly_time, fig_monthly_reps, fig_specific,
             sport_options, sport_options, min_date, max_date, current_start, current_end)
 
 

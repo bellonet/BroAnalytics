@@ -11,3 +11,10 @@ A personal sports and workout dashboard built with Dash and Plotly to visualize 
 * Responsive Filtering: Filters data by date range and specific sports in the sidebar.
 
 * Real-time Data: Reads data from a published Google Sheet URL to ensure the dashboard is always up-to-date.
+
+### TODO
+
+* Add sport specific KPIs
+* Prettify deep dive section
+* Clean code
+* Add export as PDF
