@@ -6,7 +6,6 @@ import plotly.express as px
 
 # Import our custom modules
 from data_loader import load_data
-
 from plots import (
     plot_overview_timeline,
     plot_activity_distribution,
@@ -18,10 +17,9 @@ from plots import (
 ##
 
 # --- CONFIG ---
-CSV_SOURCE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRlt_GMSRudbO1-ynoxJm2G8vwW1iHkvRYwNwDr-AU-G8yqTrnxqCuQfrmcrluwjM2ujY9GGk8izkI_/pub?output=csv'
+DATA_SOURCE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRlt_GMSRudbO1-ynoxJm2G8vwW1iHkvRYwNwDr-AU-G8yqTrnxqCuQfrmcrluwjM2ujY9GGk8izkI_/pub?output=xlsx'
 
-# Load Data initially
-df_raw = load_data(CSV_SOURCE)
+df_raw = load_data(DATA_SOURCE)
 
 
 def get_color_map(df):

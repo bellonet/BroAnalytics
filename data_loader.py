@@ -57,6 +57,9 @@ def load_data(filepath_or_url):
         all_sheets = pd.read_excel(excel_url, sheet_name=None)
         df = pd.concat(all_sheets.values(), ignore_index=True)
 
+        # Normalize headers immediately so downstream code finds 'date', 'activity', etc.
+        df.columns = df.columns.str.lower().str.strip()
+
     except Exception as e:
         print(f"Warning: Excel load failed ({e}). Falling back to CSV.")
         try:

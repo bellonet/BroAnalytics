@@ -10,9 +10,8 @@ def plot_overview_timeline(df, color_map=None):
 
     df = df.copy()
 
-    activity_counts = df['activity'].value_counts().sort_values()
+    activity_counts = df.groupby('activity')['date_obj'].nunique().sort_values(ascending=False)
     activity_order = activity_counts.index.tolist()
-    df['activity'] = pd.Categorical(df['activity'], categories=activity_order, ordered=True)
 
     # 1. Start with Duration. Replace 0 with NaN so we can fill it.
     df['bubble_size'] = df['duration_mins'].replace(0, np.nan)
@@ -33,7 +32,9 @@ def plot_overview_timeline(df, color_map=None):
         color='activity',
         hover_data=['duration', 'length', 'comment', 'where'],
         title="Activity Timeline",
-        color_discrete_map=color_map
+        color_discrete_map=color_map,
+        # Explicitly enforce order here
+        category_orders={"activity": activity_order}
     )
     fig.update_layout(
         template="plotly_white",
@@ -42,10 +43,7 @@ def plot_overview_timeline(df, color_map=None):
         legend=None,
         height=max(400, 30 * len(activity_order))
     )
-    fig.update_yaxes(
-        categoryorder="array",
-        categoryarray=activity_order
-    )
+
     return fig
 
 
